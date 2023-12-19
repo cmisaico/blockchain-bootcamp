@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts@4.5.0/token/ERC1155/ERC1155.sol";
@@ -20,7 +21,7 @@ contract erc1155 is ERC1155 {
         _mint(msg.sender, SWORD, 10**9, "");
         _mint(msg.sender, SHIELD, 10**9, "");
 
-        _mint(msg.sender, [GOLD, SILVER], [10**18, 10**27], "");
+        // _mint(msg.sender, [GOLD, SHIELD], [1, 2], "");
     }
 
 
