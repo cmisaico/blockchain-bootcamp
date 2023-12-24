@@ -34,6 +34,10 @@ contract loteria is ERC20, Ownable {
         return address(this).balance / 10**10;
     }
 
+    function mint(uint256 _cantidad) public onlyOwner {
+        _mint(address(this), _cantidad);
+    }
+
     function registrar() internal {
         address addr_personal_contract = address(new boletosNFTs(msg.sender,
             address(this), nft));
@@ -57,7 +61,49 @@ contract loteria is ERC20, Ownable {
         _transfer(address(this), msg.sender, _numTokens);
     }
 
+    function devolverTokens(uint _numTokens) public payable {
+        require(_numTokens > 0, "Necesitas devolver un numero de tokens mayor a 0");
+        require(_numTokens <= balanceTokens(msg.sender), "Notiene los tokens que desea devolver");
+        _transfer(msg.sender, address(this), _numTokens);
+        payable(msg.sender).transfer(precioToken(_numTokens));
+    }
 
+    uint public precioBoleto = 5;
+    mapping(address => uint []) idPersona_boletos;
+    mapping(uint => address) ADNBoleto;
+    uint randNonce = 0;
+    uint [] boletosComprados;
+
+    function compraBoleto(uint _numBoletos) public {
+        uint precioTotal = _numBoletos*precioBoleto;
+        require(precioTotal <= balanceTokens(msg.sender)
+            ,"No tiene tokens suficientes");
+        _transfer(msg.sender, address(this), precioTotal);
+
+        for(uint i = 0; i < _numBoletos; i++){
+            uint random = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender,
+                randNonce))) % 10000;
+            randNonce++;
+            idPersona_boletos[msg.sender].push(random);
+            boletosComprados.push(random);
+            ADNBoleto[random] = msg.sender;
+            boletosNFTs(usuario_contract[msg.sender]).mintBoleto(msg.sender, random);   
+        }
+    }
+
+    function tusBoletos(address _propietario) public view returns(uint [] memory){
+       return idPersona_boletos[_propietario];
+    }
+
+    function generarGanador() public onlyOwner {
+        uint longitud = boletosComprados.length;
+        require(longitud > 0, "No hay boletos comprados");
+        uint random = uint(uint(keccak256(abi.encodePacked(block.timestamp))) % longitud);
+        uint eleccion = boletosComprados[random];
+        ganador = ADNBoleto[eleccion];
+        payable(ganador).transfer(address(this).balance * 95 / 100);
+        payable(owner()).transfer(address(this).balance * 5 / 100);
+    }
 
 
 }
